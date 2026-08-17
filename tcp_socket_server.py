@@ -28,3 +28,25 @@ def parse_HTTP_message(http_message: bytes):
             i += 1
 
     return messageHTTP
+
+def create_HTTP_message(http_message_parsed):
+    final_message = ''
+
+    has_body = False
+    for key, value in http_message_parsed.items():
+        if key == 'start_line':
+            # La start line es unicamente el valor ya que no tiene nombre de header dentro del HEAD
+            start_line = value
+            final_message += start_line + '\r\n'
+        elif key == 'body':
+            final_message += '\r\n'
+            final_message += value
+            has_body = True
+        else:
+            # Los headers son del tipo 'Nombre-del-header: contenido del header'
+            final_message += key + ': ' + value + '\r\n'
+    if not has_body:
+        final_message += '\r\n'
+            
+    # Retornamos el mensaje HTTP en bytes
+    return final_message.encode()
