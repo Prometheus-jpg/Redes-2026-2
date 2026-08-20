@@ -1,4 +1,5 @@
 import socket
+import json
 
 def parse_HTTP_message(http_message: bytes):
     # separamos el mensaje por linea
@@ -84,9 +85,13 @@ if __name__ == "__main__":
             html_str = html.read()
         
         parsed['Content-Length'] = str(len(html_str.encode()))
-        
         parsed['body'] = html_str.encode()
-        parsed['X-ElQuePregunta'] = "Ricardo Ogno"
+
+        nameJSON = input("Nombre del archivo json: ")
+        dirJSON = input("direccion del archivo json: ")
+        with open(dirJSON) as file:
+            data = json.load(file)
+            parsed['X-ElQuePregunta'] =  data['X-ElQuePregunta']
 
         response_message = create_HTTP_message(parsed)
         new_socket.send(response_message)
