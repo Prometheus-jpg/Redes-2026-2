@@ -58,43 +58,79 @@ if __name__ == "__main__":
     new_socket_address = ('localhost', 8000)
 
     print('Creando socket - Servidor')
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    server_socket.bind(new_socket_address)
-    server_socket.listen(3)
+    proxy_socket.bind(new_socket_address)
+    proxy_socket.listen(3)
 
     print('... Esperando clientes')
     while True:
-        new_socket, new_socket_address = server_socket.accept()
+        client_socket, client_socket_address = proxy_socket.accept()
 
-        recv_message = new_socket.recv(buff_size)
+        recv_message = client_socket.recv(buff_size)
         
         while recv_message.find(b'\r\n\r\n') == -1:
-            recv_message += new_socket.recv(buff_size)
+            recv_message += client_socket.recv(buff_size)
 
         parsed = parse_HTTP_message(recv_message)
         if 'body' in parsed.keys():
-            while len(parsed['body']) < parsed['Content-Length']:
-                recv_message += new_socket.recv(buff_size)
+            while len(parsed['body']) < int(parsed['Content-Length']):
+                recv_message += client_socket.recv(buff_size)
                 parsed = parse_HTTP_message(recv_message)
 
-        parsed['start_line'] = parsed['start_line'].split(" ")[-1] + ' 200 OK'
-        parsed['Content-Type'] = 'text/html; charset=UTF-8'
-
-        with open('res.html', 'r', encoding='utf-8') as html:
-            html_str = html.read()
-        
-        parsed['Content-Length'] = str(len(html_str.encode()))
-        parsed['body'] = html_str.encode()
-
-        nameJSON = input("Nombre del archivo json: ")
-        dirJSON = input("direccion del archivo json: ")
-        with open(dirJSON) as file:
+        with open('proxy_forb.json') as file:
             data = json.load(file)
-            parsed['X-ElQuePregunta'] =  data['X-ElQuePregunta']
+            blocked_dom = data['blocked']
 
-        response_message = create_HTTP_message(parsed)
-        new_socket.send(response_message)
+        if parsed['start_line'].split( )[0] == 'CONNECT': #Solo nos importa HTTP Request
+            continue
+        elif parsed['start_line'].find('/gatito-LoP.jpg') != -1: #GET de la imagen
+            parsed['start_line'] = parsed['start_line'].split(" ")[-1] + ' 200 OK'
+            parsed['Content-Type'] = 'image/jpg'
+            with open('gatito-LoP.jpg', 'rb') as file:
+                img = file.read()
+            parsed['Content-Length'] = str(len(img))
+            parsed['body'] = img
+            
+        elif parsed['start_line'].split( )[1][7:] in blocked_dom:
+            parsed['start_line'] = parsed['start_line'].split(" ")[-1] + ' 403 FORBIDDEN'
+            parsed['Content-Type'] = 'text/html; charset=UTF-8'
+            with open('forbidden.html', 'r', encoding='utf-8') as html:
+                html_str = html.read()
+            parsed['Content-Length'] = str(len(html_str.encode()))
+            parsed['body'] = html_str.encode()
 
-        new_socket.close()
-        print(f"conexión con {new_socket_address} ha sido cerrada")
+        else:
+            IP_server = parsed['Host']
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.connect((IP_server, 80))
+
+            parsed['X-ElQuePregunta'] = 'Ricardo Ogno'
+            response_server = create_HTTP_message(parsed)
+            server_socket.send(response_server)
+
+            recv_server_message = server_socket.recv(buff_size)
+            while recv_server_message.find(b'\r\n\r\n') == -1:
+                recv_server_message += server_socket.recv(buff_size)
+            
+            parsed = parse_HTTP_message(recv_server_message)
+            if 'Content-Length' in parsed.keys():
+                while len(parsed['body']) < int(parsed['Content-Length']):
+                    recv_server_message += server_socket.recv(buff_size)
+                    parsed = parse_HTTP_message(recv_server_message)
+
+            server_socket.close()
+            print(f"conexión con server ha sido cerrada")
+
+        with open('proxy_forb.json') as file:
+            data = json.load(file)
+            for word in data['forbidden_words']:
+                for key, item in word.items():
+                    parsed['body'] = parsed['body'].replace(key.encode(), item.encode())
+        parsed['Content-Length'] = str(len(parsed['body']))
+
+        redirect_message = create_HTTP_message(parsed)
+        client_socket.send(redirect_message)
+
+        client_socket.close()
+        print(f"conexión con cliente {client_socket_address} ha sido cerrada")
