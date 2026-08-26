@@ -100,7 +100,6 @@ if __name__ == "__main__":
         # JSON con los dominios bloqueadas y palabras no permitidas
         with open('proxy_forb.json') as file:
             data = json.load(file)
-            blocked_dom = data['blocked']
 
         if parsed['start_line'].split( )[0] == 'CONNECT': #Solo nos importa HTTP Request
             continue
@@ -113,7 +112,7 @@ if __name__ == "__main__":
             parsed['body'] = img
 
         # En caso de que se este pidiendo una pagina bloqueada se entrega un error 403
-        elif parsed['start_line'].split( )[1][7:] in blocked_dom:
+        elif parsed['start_line'].split( )[1][7:] in data['blocked']:
             parsed['start_line'] = parsed['start_line'].split(" ")[-1] + ' 403 FORBIDDEN'
             parsed['Content-Type'] = 'text/html; charset=UTF-8'
             with open('forbidden.html', 'r', encoding='utf-8') as html:
@@ -149,11 +148,9 @@ if __name__ == "__main__":
 
         # Si es que en la pagina devuelta por el servidor contiene alguna palabra prohibida
         # la cambiamos como se indica en el JSON
-        with open('proxy_forb.json') as file:
-            data = json.load(file)
-            for word in data['forbidden_words']:
-                for key, item in word.items():
-                    parsed['body'] = parsed['body'].replace(key.encode(), item.encode())
+        for word in data['forbidden_words']:
+            for key, item in word.items():
+                parsed['body'] = parsed['body'].replace(key.encode(), item.encode())
         parsed['Content-Length'] = str(len(parsed['body']))
 
         redirect_message = create_HTTP_message(parsed)
