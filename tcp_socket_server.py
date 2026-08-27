@@ -64,6 +64,23 @@ def create_HTTP_message(http_message_parsed):
     # Retornamos el mensaje HTTP en bytes
     return final_message
 
+# El tamaño del buffer puede ser menor que el largo del mensaje por lo que nos aseguramos de 
+# tenerlo completo, primero vemos si en el mensaje recibido tenemos el final del head (\r\n\r\n),
+# luego si es que hay body ocupamos el header Content-length para asegurarnos de tenerlo completo
+def recv_message(new_socket, buff_size):
+    message = new_socket.recv(buff_size)
+            
+    while message.find(b'\r\n\r\n') == -1:
+        message += new_socket.recv(buff_size)
+
+    parsed = parse_HTTP_message(message)
+    if 'Content-Length' in parsed.keys():
+        while len(parsed['body']) < int(parsed['Content-Length']):
+            message += new_socket.recv(buff_size)
+            parsed = parse_HTTP_message(message)
+
+    return parsed
+
 
 if __name__ == "__main__":
     buff_size = 30
@@ -80,21 +97,8 @@ if __name__ == "__main__":
     while True:
         client_socket, client_socket_address = proxy_socket.accept()
 
-        #|-------------- Recibir mensaje del cliente -----------------|#
-        # El tamaño del buffer puede ser menor que el largo del mensaje por lo que nos aseguramos de 
-        # tenerlo completo, primero vemos si en el mensaje recibido tenemos el final del head (\r\n\r\n),
-        # luego si es que hay body ocupamos el header COntent-length para asegurarno de tenerlo completo
-        recv_message = client_socket.recv(buff_size)
-        
-        while recv_message.find(b'\r\n\r\n') == -1:
-            recv_message += client_socket.recv(buff_size)
-
-        parsed = parse_HTTP_message(recv_message)
-        if 'body' in parsed.keys():
-            while len(parsed['body']) < int(parsed['Content-Length']):
-                recv_message += client_socket.recv(buff_size)
-                parsed = parse_HTTP_message(recv_message)
-        #|------------------------------------------------------------|#
+        # Recibir mensaje del cliente 
+        parsed = recv_message(client_socket, buff_size)
 
 
         # JSON con los dominios bloqueadas y palabras no permitidas
@@ -130,19 +134,8 @@ if __name__ == "__main__":
             response_server = create_HTTP_message(parsed)
             server_socket.send(response_server)
 
-            #|-------------- Recibir respuesta del server ----------------|#
-            #Mismo procedimiento que con el mensaje del cliente para asegurarnos
-            # de recibirlo completo
-            recv_server_message = server_socket.recv(buff_size)
-            while recv_server_message.find(b'\r\n\r\n') == -1:
-                recv_server_message += server_socket.recv(buff_size)
-            
-            parsed = parse_HTTP_message(recv_server_message)
-            if 'Content-Length' in parsed.keys():
-                while len(parsed['body']) < int(parsed['Content-Length']):
-                    recv_server_message += server_socket.recv(buff_size)
-                    parsed = parse_HTTP_message(recv_server_message)
-            #|------------------------------------------------------------|#
+            # Recibir respuesta del server
+            parsed = recv_message(server_socket, buff_size)
 
             server_socket.close()
             print(f"conexión con server ha sido cerrada")
