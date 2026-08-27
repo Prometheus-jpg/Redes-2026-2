@@ -121,9 +121,10 @@ if __name__ == "__main__":
             parsed['body'] = html_str.encode()
 
         else:
-            IP_server = parsed['Host']
+            host = parsed['Host']
+            server_address = (host.split(':')[0], int(host.split(':')[1])) if ':' in host else (host, 80) 
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.connect((IP_server, 80))
+            server_socket.connect(server_address)
 
             parsed['X-ElQuePregunta'] = 'Ricardo Ogno'
             response_server = create_HTTP_message(parsed)
