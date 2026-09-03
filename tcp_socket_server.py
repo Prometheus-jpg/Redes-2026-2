@@ -140,12 +140,12 @@ if __name__ == "__main__":
             server_socket.close()
             print(f"conexión con server ha sido cerrada")
 
-        # Si es que en la pagina devuelta por el servidor contiene alguna palabra prohibida
-        # la cambiamos como se indica en el JSON
-        for word in data['forbidden_words']:
-            for key, item in word.items():
-                parsed['body'] = parsed['body'].replace(key.encode(), item.encode())
-        parsed['Content-Length'] = str(len(parsed['body']))
+            # Si es que en la pagina devuelta por el servidor contiene alguna palabra prohibida
+            # la cambiamos como se indica en el JSON
+            for word in data['forbidden_words']:
+                for key, item in word.items():
+                    parsed['body'] = parsed['body'].replace(key.encode(), item.encode())
+            parsed['Content-Length'] = str(len(parsed['body']))
 
         redirect_message = create_HTTP_message(parsed)
         client_socket.send(redirect_message)
