@@ -46,6 +46,54 @@ def parse_DNS(dnslib_message):
 
 	return DNSparsed(Qname, ancount, nscount, arcount, answers, auths, additionals)
 
+def resolver(mensaje_consulta: bytes, ip_addr='198.41.0.4'):
+	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	try:
+		sock.sendto(mensaje_consulta, (ip_addr, 53))
+		data, _ = sock.recvfrom(4096)
+		d = DNSRecord.parse(data)
+	finally:
+		sock.close()
+	
+	parsed = parse_DNS(d)
+	while True:
+		con = False
+		if parsed.p_ANcount > 0: #b
+			for answer in parsed.p_Answer:
+				if answer.RRtype == 'A':
+					return bytes(d.pack())
+
+		elif parsed.p_NScount > 0: #c
+			for auth in parsed.p_Authority:
+				if auth.RRtype == 'NS':
+					if parsed.p_ARcount > 0: #c.i
+						for add in parsed.p_Additional:
+							if add.RRtype == 'A':
+								sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+								sock.sendto(mensaje_consulta, (str(add.RRdata), 53))
+								data, _ = sock.recvfrom(4096)
+								d = DNSRecord.parse(data)
+								parsed = parse_DNS(d)
+								con = True
+								break
+					if con:
+						break
+					#c.ii
+					nsauth = str(auth.RRdata)
+					rec = resolver(nsauth.encode())
+					if rec:
+						rec = DNSRecord.parse(rec)
+						parsedRec = parse_DNS(rec)
+						sock.sendto(bytes(d.pack()), (parsedRec.p_Answer[-1].RRdata, 53))
+						data, _ = sock.recvfrom(4096)
+						d = DNSRecord.parse(data)
+						parsed = parse_DNS(d)
+						break
+					else:
+						return
+		else:
+			return	
+
 
 if __name__ == "__main__":
 	socket_addres = ('10.0.2.15', 8000)
@@ -55,8 +103,9 @@ if __name__ == "__main__":
 
 	try:
 		while True:
-			data, _ = sock.recvfrom(1024)
-			d = DNSRecord.parse(data)
-			parsed = parse_DNS(d)
+			data, addr_client = sock.recvfrom(4096)
+			res = resolver(data)
+			if res:
+				sock.sendto(res, addr_client)
 	finally:
 		sock.close()
