@@ -27,6 +27,8 @@ def resolver(mensaje_consulta: bytes, ip_addr='198.41.0.4'):
 				if answer.RRtype == 'A':
 					cache.addDom(parsed.p_Qname, d.rr)
 					return bytes(d.pack())
+				else:
+					return
 
 		elif parsed.p_NScount > 0: #c
 			for auth in parsed.p_Authority:
