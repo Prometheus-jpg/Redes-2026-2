@@ -2,6 +2,11 @@ import socket
 from dnslib import DNSRecord
 from utils import parse_DNS, Cache 
 
+def findA(answers):
+	for ans in answers:
+		if ans.RRtype == 'A':
+			return True
+	return False
 
 def resolver(mensaje_consulta: bytes, ip_addr='198.41.0.4'):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -23,16 +28,17 @@ def resolver(mensaje_consulta: bytes, ip_addr='198.41.0.4'):
 	while True:
 		con = False
 		if parsed.p_ANcount > 0: #b
-			for answer in parsed.p_Answer:
-				if answer.RRtype == 'A':
-					cache.addDom(parsed.p_Qname, d.rr)
-					return bytes(d.pack())
-				else:
-					return
+			if findA(parsed.p_Answer):
+				cache.addDom(parsed.p_Qname, d.rr)
+				return bytes(d.pack())
+			else:
+				return
 
 		elif parsed.p_NScount > 0: #c
+			countNS = 0
 			for auth in parsed.p_Authority:
 				if auth.RRtype == 'NS':
+					countNS += 1
 					if parsed.p_ARcount > 0: #c.i
 						for add in parsed.p_Additional:
 							if add.RRtype == 'A':
@@ -60,6 +66,8 @@ def resolver(mensaje_consulta: bytes, ip_addr='198.41.0.4'):
 						break
 					else:
 						return
+			if countNS == 0:
+				return
 		else:
 			return	
 
