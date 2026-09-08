@@ -90,9 +90,9 @@ class Cache:
 			index_min = self.indexMin(self.slots)
 			max_last20 = self.last20[index_max]
 			min_slots = self.slots[index_min]
-			if max_last20.repeticiones >= min_slots.repeticiones:
-				self.slots[index_min] = max_last20
-				self.last20.pop(index_max)
+			if max_last20.repeticiones > min_slots.repeticiones:
+				self.slots[index_min]  = max_last20
+				self.last20[index_max] = min_slots
 			else:
 				break
 
@@ -100,6 +100,7 @@ class Cache:
 		dom_in_last = self.findInLast(dom_name)
 		if dom_in_last != -1:
 			self.last20[dom_in_last].repeticiones += 1
+			self.updateCache()
 		elif len(self.last20) < 20:
 			self.last20.append(Slot(dom_name, 1, new_ip)) 
 		else:
@@ -107,5 +108,4 @@ class Cache:
 			self.slots[index_min].domName 	   = dom_name
 			self.slots[index_min].repeticiones = 1
 			self.slots[index_min].ip 		   = new_ip
-		self.updateCache()
 #---------------------------------------------------------------------------------#
