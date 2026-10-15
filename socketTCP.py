@@ -1,5 +1,6 @@
 import socket
 import random
+import time
 
 class SocketTCP:
     def __init__(self):
@@ -26,8 +27,8 @@ class SocketTCP:
 
     @staticmethod
     def create_segment(parsed_TCP):
-        return (parsed_TCP["seq"].to_bytes(4) + bytes([parsed_TCP["ACK"]]) + 
-                bytes([parsed_TCP["SYN"]]) + bytes([parsed_TCP["FIN"]]) + 
+        return (parsed_TCP["seq"].to_bytes(4) + bytes([parsed_TCP["SYN"]]) + 
+                bytes([parsed_TCP["ACK"]]) + bytes([parsed_TCP["FIN"]]) + 
                 parsed_TCP["data"])
 
     def bind(self, address):
@@ -35,19 +36,23 @@ class SocketTCP:
         self.socket.bind(address)
 
     def connect(self, address):
+        self.socket.settimeout(0.3)
         self.seq = random.randint(0, 100)
         syn_ack_fin = bytes([1,0,0]) 
         self.bind(('localhost', 0))
         while True:
-            self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, address)
-            res, _ = self.socket.recvfrom(self.buffer)
-            parse = self.parse_segment(res)
-            if parse["SYN"] == 1 and parse["ACK"] != 0 and parse["seq"] == self.seq+1:
-                self.seq = parse["seq"] + 1
-                syn_ack_fin = bytes([0,parse["ACK"],0])
+            try:
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, address)
-                self.destino = address
-                return
+                res, _ = self.socket.recvfrom(self.buffer)
+                parse = self.parse_segment(res)
+                if parse["SYN"] == 1 and parse["ACK"] != 0 and parse["seq"] == self.seq+1:
+                    self.seq = parse["seq"] + 1
+                    syn_ack_fin = bytes([0,parse["ACK"],0])
+                    self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, address)
+                    self.destino = address
+                    return
+            except: 
+                continue
 
     def accept(self):
         while True:
@@ -57,19 +62,16 @@ class SocketTCP:
                 self.seq = parse["seq"] + 1
                 syn_ack_fin = bytes([parse["SYN"],1,0])
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, res_address)
-                res, res_address = self.socket.recvfrom(self.buffer)
-                parse = self.parse_segment(res)
-                if parse["ACK"] == 1 and parse["seq"] > self.seq:
-                    new_sock = SocketTCP()
-                    new_sock.socket = self.socket
-                    new_sock.origen = self.origen
-                    new_sock.destino = res_address
-                    new_sock.seq = parse["seq"]
-                    return new_sock, res_address
+                new_sock = SocketTCP()
+                new_sock.socket  = self.socket
+                new_sock.origen  = self.origen
+                new_sock.seq     = self.seq
+                new_sock.destino = res_address
+                return new_sock, res_address
 
     def send(self, message):
         self.socket.settimeout(0.3)
-        syn_ack_fin = bytes([1,0,0])
+        syn_ack_fin = bytes([0,0,0])
         lenght_message = len(message)
         segment = bytes([lenght_message])
         while True:
@@ -102,7 +104,10 @@ class SocketTCP:
             data, _ = self.socket.recvfrom(self.buffer)
             parsed = self.parse_segment(data)
             if parsed["seq"] >= self.seq or self.v_recv!=1:
-                if self.v_recv == 0:
+                if parsed["ACK"] == 1:
+                    self.seq = parsed["seq"]
+                    continue
+                elif self.v_recv == 0:
                     self.seq = parsed["seq"]+len(parsed["data"])
                     message_length = int.from_bytes(parsed["data"])
                     self.v_recv = 1
@@ -122,7 +127,11 @@ class SocketTCP:
                 parsed["ACK"] = 1
                 parsed["seq"] = self.seq
                 self.socket.sendto(self.create_segment(parsed), self.destino)
-
+            
+            elif parsed["SYN"] == 1:
+                parsed["ACK"] = 1
+                parsed["seq"] += 1
+                self.socket.sendto(self.create_segment(parsed), self.destino)
             else: # seq duplicado
                 syn_ack_fin = bytes([0,1,0])
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
@@ -131,7 +140,52 @@ class SocketTCP:
             self.v_recv = 0
         return message_received
 
-    
+    def close(self):
+        self.socket.settimeout(0.3)
+        reenv_fin = 1
+        while True:
+            try:
+                syn_ack_fin = bytes([0,0,1])
+                self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
+                res, _ = self.socket.recvfrom(self.buffer)
+                parsed = self.parse_segment(res)
+                if parsed["FIN"] == 1 and parsed["ACK"] != 0:
+                    self.seq = parsed["seq"] + 1
+                    syn_ack_fin = bytes([0,parsed["ACK"],0])
+                    for _ in range(3):
+                        self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
+                        time.sleep(0.3)
+                    self.socket.close()
+                    return
+            except:
+                if reenv_fin == 3:
+                    self.socket.close()
+                    return
+                reenv_fin += 1
+
+    def recv_close(self):
+        while True:
+            req, _ = self.socket.recvfrom(self.buffer)
+            parsed = self.parse_segment(req)
+            if parsed["FIN"] != 0:
+                    break
+            
+        self.seq = parsed["seq"] + 1
+        syn_ack_fin = bytes([0,1,parsed["FIN"]])
+        reenv_ack = 1
+        while True:
+            try:
+                self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
+                res, _ = self.socket.recvfrom(self.buffer)
+                parsed = self.parse_segment(res)
+                if parsed["ACK"] == 1 and parsed["seq"] == (self.seq+1):
+                    self.socket.close()
+                    return 
+            except:
+                if reenv_ack == 3:
+                    self.socket.close()
+                    return 
+                reenv_ack += 1
 
         
 
