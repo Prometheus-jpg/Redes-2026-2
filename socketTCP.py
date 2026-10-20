@@ -54,6 +54,7 @@ class SocketTCP:
                     self.destino = address
                     return
             except: 
+                print(f"(debug): connect - timeout terminado enviando SYN con seq {self.seq}")
                 continue
 
     def accept(self):
@@ -85,6 +86,7 @@ class SocketTCP:
                     self.seq = parsed["seq"]
                     break
             except:
+                print(f"(debug): send - timeout terminado enviando largo de mensaje con seq {self.seq}")
                 continue
         i = 0
         while i < lenght_message:
@@ -97,6 +99,7 @@ class SocketTCP:
                     self.seq = parsed["seq"]
                     i += 16
             except:
+                print(f"(debug): send - timeout terminado enviando segmento con seq {self.seq}")
                 continue
 
     def recv(self, buff_size):
@@ -106,10 +109,12 @@ class SocketTCP:
             data, _ = self.socket.recvfrom(self.buffer)
             parsed = self.parse_segment(data)
             if parsed["SYN"] == 1:
+                print(f"(debug): recv - recibe SYN de nuevo con seq {parsed["seq"]}")
                 parsed["ACK"] = 1
                 parsed["seq"] += 1
                 self.socket.sendto(self.create_segment(parsed), self.destino)
             elif parsed["seq"] < self.seq and self.seq_aux < parsed["seq"]: #segmento duplicado
+                print(f"(debug): recv - segmento duplicado con seq {parsed["seq"]}")
                 syn_ack_fin = bytes([0,1,0])
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
             else:
@@ -166,6 +171,7 @@ class SocketTCP:
                     self.socket.close()
                     return
             except:
+                print(f"(debug): close - timeout terminado enviando FIN con seq {self.seq}")
                 if reenv_fin == 3:
                     self.socket.close()
                     return
@@ -178,6 +184,7 @@ class SocketTCP:
             if parsed["FIN"] != 0:
                 break
             if parsed["seq"] < self.seq:
+                print(f"(debug): recv_close - segmento duplicado con seq {parsed["seq"]}")
                 syn_ack_fin = bytes([0,1,0])
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
             
@@ -193,6 +200,7 @@ class SocketTCP:
                     self.socket.close()
                     return 
             except:
+                print(f"(debug): recv_close - timeout terminado enviando ACK+FIN con seq {self.seq}")
                 if reenv_ack == 3:
                     self.socket.close()
                     return 
