@@ -11,6 +11,8 @@ class SocketTCP:
         self.seq     = 0
         self.v_recv  = 0
         self.len_rem = 0
+        self.seq_aux = 0
+        self.buff_rem = 0
 
 
     @staticmethod
@@ -73,7 +75,7 @@ class SocketTCP:
         self.socket.settimeout(0.3)
         syn_ack_fin = bytes([0,0,0])
         lenght_message = len(message)
-        segment = bytes([lenght_message])
+        segment = lenght_message.to_bytes(4)
         while True:
             self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin+segment, self.destino)
             try:
@@ -103,7 +105,14 @@ class SocketTCP:
         while (len(message_received) - min(message_length, buff_size)) < 0 or self.v_recv == 0:
             data, _ = self.socket.recvfrom(self.buffer)
             parsed = self.parse_segment(data)
-            if parsed["seq"] >= self.seq or self.v_recv!=1:
+            if parsed["SYN"] == 1:
+                parsed["ACK"] = 1
+                parsed["seq"] += 1
+                self.socket.sendto(self.create_segment(parsed), self.destino)
+            elif parsed["seq"] < self.seq and self.seq_aux < parsed["seq"]: #segmento duplicado
+                syn_ack_fin = bytes([0,1,0])
+                self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
+            else:
                 if parsed["ACK"] == 1:
                     self.seq = parsed["seq"]
                     continue
@@ -112,14 +121,17 @@ class SocketTCP:
                     message_length = int.from_bytes(parsed["data"])
                     self.v_recv = 1
                 elif self.v_recv == 2:
-                    self.seq += (16-buff_size)
-                    message_received += parsed["data"][buff_size:] 
+                    self.seq += min((16-self.buff_rem), len(parsed["data"]))
+                    message_received += parsed["data"][self.buff_rem:]
+                    self.buff_rem = 0
+                    self.seq_aux = 0
                     self.v_recv = 1
-                elif buff_size < 16 and message_length > buff_size:
-                    self.seq = parsed["seq"]+buff_size
-                    message_received += parsed["data"][0:buff_size]
-                    self.v_recv = 2
-                    self.len_rem = message_length-buff_size
+                elif buff_size-len(message_received) < 16 and message_length>buff_size:
+                    max_lec = buff_size - len(message_received)
+                    self.seq = parsed["seq"] + max_lec
+                    self.seq_aux = self.seq
+                    message_received += parsed["data"][0:max_lec]
+                    self.buff_rem = max_lec
                 else:
                     self.seq = parsed["seq"]+len(parsed["data"])
                     message_received += parsed["data"]
@@ -128,16 +140,12 @@ class SocketTCP:
                 parsed["seq"] = self.seq
                 self.socket.sendto(self.create_segment(parsed), self.destino)
             
-            elif parsed["SYN"] == 1:
-                parsed["ACK"] = 1
-                parsed["seq"] += 1
-                self.socket.sendto(self.create_segment(parsed), self.destino)
-            else: # seq duplicado
-                syn_ack_fin = bytes([0,1,0])
-                self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
-        
+        if len(message_received) < message_length:
+            self.v_recv = 2
+            self.len_rem = message_length-len(message_received)
         if self.v_recv == 1: 
             self.v_recv = 0
+
         return message_received
 
     def close(self):
@@ -168,7 +176,10 @@ class SocketTCP:
             req, _ = self.socket.recvfrom(self.buffer)
             parsed = self.parse_segment(req)
             if parsed["FIN"] != 0:
-                    break
+                break
+            if parsed["seq"] < self.seq:
+                syn_ack_fin = bytes([0,1,0])
+                self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
             
         self.seq = parsed["seq"] + 1
         syn_ack_fin = bytes([0,1,parsed["FIN"]])
