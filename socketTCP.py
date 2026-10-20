@@ -126,7 +126,7 @@ class SocketTCP:
                     message_length = int.from_bytes(parsed["data"])
                     self.v_recv = 1
                 elif self.v_recv == 2:
-                    self.seq += min((16-self.buff_rem), len(parsed["data"]))
+                    self.seq += min((min(16, buff_size)-self.buff_rem), len(parsed["data"]))
                     message_received += parsed["data"][self.buff_rem:]
                     self.buff_rem = 0
                     self.seq_aux = 0
@@ -191,6 +191,7 @@ class SocketTCP:
         self.seq = parsed["seq"] + 1
         syn_ack_fin = bytes([0,1,parsed["FIN"]])
         reenv_ack = 1
+        self.socket.settimeout(0.3)
         while True:
             try:
                 self.socket.sendto(self.seq.to_bytes(4)+syn_ack_fin, self.destino)
