@@ -9,6 +9,7 @@ class packetIP:
         self.ip_b = 0
         self.ip_c = 0
         self.ip_d = 0
+        self.ip = "0.0.0.0"
         self.port = 0
         self.message = b''
 
@@ -17,6 +18,7 @@ class packetIP:
         self.ip_b = IP_packet[1]
         self.ip_c = IP_packet[2]
         self.ip_d = IP_packet[3]
+        self.ip = f'{self.ip_a}.{self.ip_b}.{self.ip_c}.{self.ip_d}'
         self.port = int.from_bytes(IP_packet[4:6])
         self.message = IP_packet[6:]
 
