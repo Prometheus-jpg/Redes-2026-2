@@ -29,6 +29,9 @@ if __name__ == "__main__":
         try:
             data, _ = router_sock.recvfrom(4096)
             parsed = packetIP.parse_packet(data)
+            if parsed.TTL == 0:
+                print(f'Se recibió paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con TTL 0')
+                continue
             if parsed.ip == router_address[0] and parsed.port == router_address[1]:
                 print(parsed.message.decode())
             else:
@@ -36,7 +39,7 @@ if __name__ == "__main__":
                 if not next_hop:
                     print(f"No hay rutas hacia ({parsed.ip}, {parsed.port}) para paquete {parsed.ip};{parsed.port};{parsed.message}")
                 else:
-                    redirigir_mensaje = f"redirigiendo paquete {parsed.ip};{parsed.port};{parsed.message} con destino final " \
+                    redirigir_mensaje = f"redirigiendo paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con destino final " \
                                         f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]})"
                     print(redirigir_mensaje)
                     router_sock.sendto(packetIP.create_packet(parsed), next_hop)

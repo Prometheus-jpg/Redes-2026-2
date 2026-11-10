@@ -18,7 +18,7 @@ if __name__ == "__main__":
         int(IP_router_final_splitted[2]),
         int(IP_router_final_splitted[3]),
     ])
-    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + mensaje.encode())
+    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([10]) + mensaje.encode())
 
     print("\n")
     print("Enviando paquete...")
