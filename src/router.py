@@ -25,8 +25,8 @@ if __name__ == "__main__":
     roundRobin = RoundRobin()
     router_name = roundRobin.add_router_zones(str(router_rutas_path))
 
-    try:
-        while True:
+    while True:
+        try:
             data, _ = router_sock.recvfrom(4096)
             parsed = packetIP.parse_packet(data)
             if parsed.ip == router_address[0] and parsed.port == router_address[1]:
@@ -40,5 +40,5 @@ if __name__ == "__main__":
                                         f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]})"
                     print(redirigir_mensaje)
                     router_sock.sendto(packetIP.create_packet(parsed), next_hop)
-    finally:
-        router_sock.close()
+        except:
+            continue
