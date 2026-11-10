@@ -12,6 +12,7 @@ class packetIP:
         self.ip = "0.0.0.0"
         self.port = 0
         self.message = b''
+        self.TTL = 0
 
     def parse_packet(self, IP_packet: bytes):
         self.ip_a = IP_packet[0]
@@ -20,11 +21,12 @@ class packetIP:
         self.ip_d = IP_packet[3]
         self.ip = f'{self.ip_a}.{self.ip_b}.{self.ip_c}.{self.ip_d}'
         self.port = int.from_bytes(IP_packet[4:6])
-        self.message = IP_packet[6:]
+        self.TTL = IP_packet[6]
+        self.message = IP_packet[7:]
 
     def create_packet(self):
         IP_dir = bytes([self.ip_a, self.ip_b, self.ip_c, self.ip_d])
-        return IP_dir + self.port.to_bytes(2) + self.message
+        return IP_dir + self.port.to_bytes(2) + bytes([self.TTL]) + self.message
 
 
 def parse_packet(IP_packet: bytes):
