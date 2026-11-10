@@ -37,8 +37,9 @@ if __name__ == "__main__":
             else:
                 next_hop = check_routes(str(router_rutas_path), (parsed.ip, parsed.port), (roundRobin, router_name))
                 if not next_hop:
-                    print(f"No hay rutas hacia ({parsed.ip}, {parsed.port}) para paquete {parsed.ip};{parsed.port};{parsed.message}")
+                    print(f"No hay rutas hacia ({parsed.ip}, {parsed.port}) para paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message}")
                 else:
+                    parsed.TTL -= 1
                     redirigir_mensaje = f"redirigiendo paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con destino final " \
                                         f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]})"
                     print(redirigir_mensaje)
