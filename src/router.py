@@ -2,6 +2,7 @@ import sys
 import socket
 import packetIP
 from check_routes import check_routes
+from RoundRobin import RoundRobin
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,6 +22,9 @@ if __name__ == "__main__":
     router_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     router_sock.bind(router_address)
 
+    roundRobin = RoundRobin()
+    router_name = roundRobin.add_router_zones(str(router_rutas_path))
+
     try:
         while True:
             data, _ = router_sock.recvfrom(4096)
@@ -28,7 +32,7 @@ if __name__ == "__main__":
             if parsed.ip == router_address[0] and parsed.port == router_address[1]:
                 print(parsed.message.decode())
             else:
-                next_hop = check_routes(str(router_rutas_path), (parsed.ip, parsed.port))
+                next_hop = check_routes(str(router_rutas_path), (parsed.ip, parsed.port), (roundRobin, router_name))
                 if not next_hop:
                     print(f"No hay rutas hacia ({parsed.ip}, {parsed.port}) para paquete {parsed.ip};{parsed.port};{parsed.message}")
                 else:
