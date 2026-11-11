@@ -35,13 +35,14 @@ if __name__ == "__main__":
             if parsed.ip == router_address[0] and parsed.port == router_address[1]:
                 print(parsed.message.decode())
             else:
-                next_hop = check_routes(str(router_rutas_path), (parsed.ip, parsed.port), (roundRobin, router_name))
-                if not next_hop:
+                result_check = check_routes(str(router_rutas_path), (parsed.ip, parsed.port), (roundRobin, router_name))
+                if not result_check:
                     print(f"No hay rutas hacia ({parsed.ip}, {parsed.port}) para paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message}")
                 else:
+                    next_hop, mtu = result_check
                     parsed.TTL -= 1
                     redirigir_mensaje = f"redirigiendo paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con destino final " \
-                                        f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]})"
+                                        f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]}) con MTU= {mtu}"
                     print(redirigir_mensaje)
                     router_sock.sendto(packetIP.create_packet(parsed), next_hop)
         except:
