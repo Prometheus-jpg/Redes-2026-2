@@ -1,7 +1,7 @@
 import sys
 import socket
 import packetIP
-from utils import check_routes
+from utils import check_routes, fragment_IP_packet
 from RoundRobin import RoundRobin
 from pathlib import Path
 
@@ -41,9 +41,12 @@ if __name__ == "__main__":
                 else:
                     next_hop, mtu = result_check
                     parsed.TTL -= 1
-                    redirigir_mensaje = f"redirigiendo paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con destino final " \
-                                        f"({parsed.ip}, {parsed.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]}) con MTU= {mtu}"
-                    print(redirigir_mensaje)
-                    router_sock.sendto(packetIP.create_packet(parsed), next_hop)
+                    packets = fragment_IP_packet(packetIP.create_packet(parsed), mtu)
+                    for packet in packets:
+                        p_packet = packetIP.parse_packet(packet) # paquete parseado
+                        redirigir_mensaje = f"redirigiendo paquete {p_packet.ip};{p_packet.port};{p_packet.TTL};{p_packet.message} con destino final " \
+                                            f"({p_packet.ip}, {p_packet.port}) desde ({router_IP}, {router_puerto}) hacia ({next_hop[0]}, {next_hop[1]}) con MTU= {mtu}"
+                        print(redirigir_mensaje)
+                        router_sock.sendto(packet, next_hop)
         except:
             continue

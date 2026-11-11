@@ -41,10 +41,9 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
 
 def fragment_IP_packet(IP_packet: bytes, MTU: int):
     parsed = packetIP.parse_packet(IP_packet)
-    res = []
+    res: list[bytes] = []
 
     size_packet = len(IP_packet)
-    print(size_packet)
     if size_packet <= MTU:
         res.append(IP_packet)
     else:
