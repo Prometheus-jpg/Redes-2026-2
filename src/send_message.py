@@ -6,6 +6,7 @@ if __name__ == "__main__":
     IP_router_final = input("Direccion IP: ")
     puerto_router_final = int(input("Puerto: "))
     ttl = int(input("Time-To-Live: "))
+    id = int(input("ID del mensaje: "))
     mensaje = input("Escriba el mensaje a enviar: ")
 
     print("\nEscriba la direccion IP y el puerto a donde se enviara el paquete")
@@ -19,7 +20,11 @@ if __name__ == "__main__":
         int(IP_router_final_splitted[2]),
         int(IP_router_final_splitted[3]),
     ])
-    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([ttl]) + mensaje.encode())
+    size = len(mensaje)
+    offset = 0
+    FLAG = 0
+    headers_frag = id.to_bytes(4) + size.to_bytes(4) + offset.to_bytes(4) + bytes([FLAG])
+    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([ttl]) + headers_frag + mensaje.encode())
 
     print("\n")
     print("Enviando paquete...")
