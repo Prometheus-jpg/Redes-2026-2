@@ -20,10 +20,10 @@ if __name__ == "__main__":
         int(IP_router_final_splitted[2]),
         int(IP_router_final_splitted[3]),
     ])
-    size = len(mensaje)
+    size = len(mensaje.encode())
     offset = 0
     FLAG = 0
-    headers_frag = id.to_bytes(4) + size.to_bytes(4) + offset.to_bytes(4) + bytes([FLAG])
+    headers_frag = id.to_bytes(4) + offset.to_bytes(4) + size.to_bytes(4) + bytes([FLAG])
     new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([ttl]) + headers_frag + mensaje.encode())
 
     print("\n")
