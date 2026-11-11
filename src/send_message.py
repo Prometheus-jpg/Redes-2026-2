@@ -2,9 +2,10 @@ import packetIP
 import socket
 
 if __name__ == "__main__":
-    print("Escriba la direccion IP y el puerto del router final al que quiere que llegue el mensaje")
+    print("Escriba la direccion IP y el puerto del router final al que quiere que llegue el mensaje y el TTL")
     IP_router_final = input("Direccion IP: ")
     puerto_router_final = int(input("Puerto: "))
+    ttl = int(input("Time-To-Live: "))
     mensaje = input("Escriba el mensaje a enviar: ")
 
     print("\nEscriba la direccion IP y el puerto a donde se enviara el paquete")
@@ -18,7 +19,7 @@ if __name__ == "__main__":
         int(IP_router_final_splitted[2]),
         int(IP_router_final_splitted[3]),
     ])
-    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([5]) + mensaje.encode())
+    new_packetIP = packetIP.parse_packet(packetInBytes + puerto_router_final.to_bytes(2) + bytes([ttl]) + mensaje.encode())
 
     print("\n")
     print("Enviando paquete...")
