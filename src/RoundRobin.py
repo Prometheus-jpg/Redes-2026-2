@@ -1,8 +1,23 @@
 
 class RoundRobin:
+    """ Guarda las zonas que tienen los routers y la siguiente ruta que debe tomar 
+        dentro de cada zona usando round-robin 
+
+        Attributes:
+            routers (dict): diccionario con los routers y sus zonas
+
+    """
     routers = dict()
 
     def add_router_zones(self, routes_file_name: str):
+        """ Añade un nuevo router y sus zonas
+
+            Args:
+                routes_file_name (str): archivo con la tabla de rutas
+
+            Returns:
+                nombre que se le asigno al router dentro del diccionario 'routers'
+        """
         interfaces = dict()
         
         with open(routes_file_name, 'r', encoding='utf-8') as text:

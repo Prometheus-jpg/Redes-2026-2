@@ -1,1 +1,13 @@
-Archivo de prueba
+Spring es uno de los personajes más particulares y entrañables que aparecen en Lies of P, un pequeño gato que 
+se encuentra en el Hotel Krat y que, a pesar de no tener un papel protagonista en la historia, consigue destacar 
+por su personalidad y por la tranquilidad que transmite en medio del oscuro y peligroso mundo del juego. Su presencia 
+contrasta con la atmósfera sombría de Krat, una ciudad devastada por la locura de los títeres y una misteriosa 
+enfermedad, convirtiéndolo en una pequeña fuente de ternura y compañía para quienes habitan el hotel. Spring se 
+caracteriza por su comportamiento tranquilo, curioso y algo independiente, propio de un gato, y sus interacciones 
+con los demás personajes aportan momentos de calidez que ayudan a humanizar un mundo donde predominan el sufrimiento, 
+la violencia y la desesperación. Además, su apariencia y sus movimientos lo hacen especialmente adorable, logrando 
+que muchos jugadores desarrollen un cariño especial por él. Aunque su participación en los acontecimientos principales 
+es limitada, Spring representa algo más que una simple mascota: simboliza la persistencia de la vida, la inocencia y 
+la posibilidad de encontrar pequeños momentos de felicidad incluso en las circunstancias más desoladoras. En definitiva, 
+Spring es uno de esos pequeños detalles que enriquecen la experiencia de Lies of P, recordándonos que, incluso en una 
+ciudad consumida por el caos, todavía hay espacio para la ternura y el afecto que puede despertar un simple gato.

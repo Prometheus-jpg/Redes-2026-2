@@ -1,6 +1,17 @@
 from RoundRobin import RoundRobin
 
 def check_routes(routes_file_name: str, destination_address: tuple[str, int], roundRobin: tuple[RoundRobin, str]): 
+    """ Funcion encargada de revisar la tabla de rutas e indicar el siguiente salto, si hay mas de una ruta posible
+        se alternan las posibles rutas usando round-robin.
+
+        Args:
+            routes_file_name (str): archivo con la tabla de rutas
+            destination_addres (tuple[str, int]): direccion IP y puerto
+            roundRobin (tuple[RoundRobin, str]): objeto encargado de alternar las rutas usando round-robin
+
+        Returns:
+            Par (direccion IP, puerto) del siguiente salto o None si no se encuentra
+    """
     (ip_destino, puerto_destino) = destination_address
 
     with open(routes_file_name, 'r', encoding='utf-8') as text:
