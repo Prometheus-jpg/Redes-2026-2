@@ -30,7 +30,7 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
             interfaces[f'{puerto_inicial}-{puerto_final}'][0] = next_hop_i[0]
 
             next_route = routes[i + next_hop_i[0]].split(" ")
-            (next_hop_IP, next_hop_puerto) = (next_route[3], int(next_route[4]))
+            (next_hop_IP, next_hop_puerto) = (str(next_route[3]), int(next_route[4]))
             return (next_hop_IP, next_hop_puerto)
     
     return None
