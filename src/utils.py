@@ -1,4 +1,6 @@
 from RoundRobin import RoundRobin
+import packetIP
+import math
 
 def check_routes(routes_file_name: str, destination_address: tuple[str, int], roundRobin: tuple[RoundRobin, str]): 
     """ Funcion encargada de revisar la tabla de rutas e indicar el siguiente salto, si hay mas de una ruta posible
@@ -35,3 +37,29 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
             return (next_hop_IP, next_hop_puerto), mtu
     
     return None
+
+
+def fragment_IP_packet(IP_packet: bytes, MTU: int):
+    parsed = packetIP.parse_packet(IP_packet)
+    res = []
+
+    size_packet = len(IP_packet)
+    print(size_packet)
+    if size_packet <= MTU:
+        res.append(IP_packet)
+    else:
+        message_og = parsed.message
+        initial_offset = parsed.offset
+        total_size = parsed.size
+        MTU_message = MTU - 20 # tamaño headers = 20 Bytes
+        n_fragment = math.ceil(total_size / MTU_message) # numero de fragmentos
+        for i in range(n_fragment):
+            lo = i * MTU_message
+            hi = lo + MTU_message
+            parsed.message = message_og[lo:hi]
+            parsed.size = len(parsed.message)
+            parsed.offset = initial_offset + lo
+            parsed.FLAG = 1 if i < n_fragment-1 else 0 # FLAG=0 si es el ultimo fragmento
+            res.append(packetIP.create_packet(parsed))
+        
+    return res

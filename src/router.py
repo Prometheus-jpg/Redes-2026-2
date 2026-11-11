@@ -1,7 +1,7 @@
 import sys
 import socket
 import packetIP
-from check_routes import check_routes
+from utils import check_routes
 from RoundRobin import RoundRobin
 from pathlib import Path
 
