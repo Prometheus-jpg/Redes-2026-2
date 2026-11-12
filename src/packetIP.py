@@ -27,10 +27,6 @@ class packetIP:
         self.port = 0
         self.message = b''
         self.TTL = 0
-        self.id = 0
-        self.offset = 0
-        self.size = 0
-        self.FLAG = 0
 
     def parse_packet(self, IP_packet: bytes):
         """ Guarda la informacion de un paquete IP en bytes a los parametros de la clase packetIP
@@ -45,11 +41,7 @@ class packetIP:
         self.ip = f'{self.ip_a}.{self.ip_b}.{self.ip_c}.{self.ip_d}'
         self.port = int.from_bytes(IP_packet[4:6])
         self.TTL = IP_packet[6]
-        self.id = int.from_bytes(IP_packet[7:11])
-        self.offset = int.from_bytes(IP_packet[11:15])
-        self.size = int.from_bytes(IP_packet[15:19])
-        self.FLAG = IP_packet[19]
-        self.message = IP_packet[20:]
+        self.message = IP_packet[7:]
 
     def create_packet(self):
         """ Crea un paquete IP en bytes con los parametros guardados en el objeto 
@@ -58,10 +50,7 @@ class packetIP:
                 paquete IP en bytes
         """
         IP_dir = bytes([self.ip_a, self.ip_b, self.ip_c, self.ip_d])
-        headers = (IP_dir + self.port.to_bytes(2) + bytes([self.TTL]) +
-                   self.id.to_bytes(4) + self.offset.to_bytes(4) + 
-                   self.size.to_bytes(4) + bytes([self.FLAG]))
-        return headers + self.message
+        return IP_dir + self.port.to_bytes(2) + bytes([self.TTL]) + self.message
 
 
 def parse_packet(IP_packet: bytes):
