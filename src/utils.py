@@ -62,3 +62,31 @@ def fragment_IP_packet(IP_packet: bytes, MTU: int):
             res.append(packetIP.create_packet(parsed))
         
     return res
+
+
+def reassemble_IP_packet(fragment_list: list[bytes]):
+    if len(fragment_list) == 1:
+        parsed = packetIP.parse_packet(fragment_list[0])
+        if parsed.offset == 0 and parsed.FLAG == 0:
+            return fragment_list[0]
+        else: 
+            return None
+
+    fragment = [packetIP.parse_packet(frag) for frag in fragment_list]
+    fragment.sort(key=lambda x: x.offset)
+
+    message = b''
+    last_offset, last_size = 0, 0
+    for i in range(len(fragment)):
+        if ((i == len(fragment)-1 and fragment[i].FLAG != 0) or 
+            fragment[i].offset > last_offset + last_size):
+            return None
+        else:
+            message += fragment[i].message
+            last_offset = fragment[i].offset
+            last_size = fragment[i].size
+
+    fragment[-1].offset = 0
+    fragment[-1].size = len(message)
+    fragment[-1].message = message
+    return packetIP.create_packet(fragment[-1])
