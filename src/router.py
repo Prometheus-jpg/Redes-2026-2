@@ -1,7 +1,7 @@
 import sys
 import socket
 import packetIP
-from utils import check_routes, fragment_IP_packet
+from utils import check_routes, fragment_IP_packet, reassemble_IP_packet
 from RoundRobin import RoundRobin
 from pathlib import Path
 
@@ -25,6 +25,8 @@ if __name__ == "__main__":
     roundRobin = RoundRobin()
     router_name = roundRobin.add_router_zones(str(router_rutas_path))
 
+    packet_for_id = dict()
+
     while True:
         try:
             data, _ = router_sock.recvfrom(4096)
@@ -33,7 +35,17 @@ if __name__ == "__main__":
                 print(f'Se recibió paquete {parsed.ip};{parsed.port};{parsed.TTL};{parsed.message} con TTL 0')
                 continue
             if parsed.ip == router_address[0] and parsed.port == router_address[1]:
-                print(parsed.message.decode())
+                ID = str(parsed.id)
+                if ID in packet_for_id.keys():
+                    packet_for_id[ID].append(data)
+                else:
+                    packet_for_id[ID] = [data]
+
+                packet_reassemble = reassemble_IP_packet(packet_for_id[ID])
+                if packet_reassemble:
+                    parsed_reassemble = packetIP.parse_packet(packet_reassemble)
+                    packet_for_id.pop(ID) # borrar ID y lista de paquetes del diccionario
+                    print(parsed_reassemble.message.decode() + "\n")
             else:
                 result_check = check_routes(str(router_rutas_path), (parsed.ip, parsed.port), (roundRobin, router_name))
                 if not result_check:
