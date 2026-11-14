@@ -12,7 +12,7 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
             roundRobin (tuple[RoundRobin, str]): objeto encargado de alternar las rutas usando round-robin
 
         Returns:
-            Par (direccion IP, puerto) del siguiente salto o None si no se encuentra
+            Par (direccion IP, puerto) del siguiente salto y el MTU de la ruta o None si no se encuentra
     """
     (ip_destino, puerto_destino) = destination_address
 
@@ -40,6 +40,16 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
 
 
 def fragment_IP_packet(IP_packet: bytes, MTU: int):
+    """ Funcion encargada de revisar si el paquete IP_packet alcanza por la ruta con tmaño maximo MTU,
+        si no alcanza se fragmenta
+
+        Args:
+            IP_packet (bytes): paquete IP que se quiere revisar
+            MTU (int): cantidad maxima de informacion que se puede enviar por una ruta
+
+        Returns:
+            Lista de tamaño 1 con el paquete si su tamaño es monor o igual a MTU, sino la lista de fragmentos del paquete
+    """
     parsed = packetIP.parse_packet(IP_packet)
     res: list[bytes] = []
 
@@ -65,6 +75,15 @@ def fragment_IP_packet(IP_packet: bytes, MTU: int):
 
 
 def reassemble_IP_packet(fragment_list: list[bytes]):
+    """ Toma una lista de fragmentos y lo re-ensambla en un unico paquete IP, si
+        faltan fragmentos se retorna None
+
+        Args:
+            fragment_list (list[bytes]): lista de fragmentos en formato de paquete IP
+
+        Returns:
+            El paquete IP completo o None si falta un fragmento
+    """
     if len(fragment_list) == 1:
         parsed = packetIP.parse_packet(fragment_list[0])
         if parsed.offset == 0 and parsed.FLAG == 0:

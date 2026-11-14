@@ -15,6 +15,10 @@ class packetIP:
             port (int): puerto
             message (bytes): mensaje en bytes
             TTL (int): Time-To-Live del paquete
+            id (int): ID del paquete
+            offset (int): offset del fragmento en el mensaje original
+            size (int): tamaño del mensaje en el paquete 
+            FLAG (int): 1 indica que todavia faltan fragmentos, 0 si es el ultimo
     """
 
     def __init__(self,):
