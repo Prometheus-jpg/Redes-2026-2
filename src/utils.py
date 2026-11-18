@@ -8,7 +8,7 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
 
         Args:
             routes_file_name (str): archivo con la tabla de rutas
-            destination_addres (tuple[str, int]): direccion IP y puerto
+            destination_address (tuple[str, int]): direccion IP y puerto
             roundRobin (tuple[RoundRobin, str]): objeto encargado de alternar las rutas usando round-robin
 
         Returns:
@@ -40,7 +40,7 @@ def check_routes(routes_file_name: str, destination_address: tuple[str, int], ro
 
 
 def fragment_IP_packet(IP_packet: bytes, MTU: int):
-    """ Funcion encargada de revisar si el paquete IP_packet alcanza por la ruta con tmaño maximo MTU,
+    """ Funcion encargada de revisar si el paquete IP_packet alcanza por la ruta con tamaño maximo MTU,
         si no alcanza se fragmenta
 
         Args:
@@ -48,7 +48,7 @@ def fragment_IP_packet(IP_packet: bytes, MTU: int):
             MTU (int): cantidad maxima de informacion que se puede enviar por una ruta
 
         Returns:
-            Lista de tamaño 1 con el paquete si su tamaño es monor o igual a MTU, sino la lista de fragmentos del paquete
+            Lista de tamaño 1 con el paquete si su tamaño es menor o igual a MTU, sino la lista de fragmentos del paquete
     """
     parsed = packetIP.parse_packet(IP_packet)
     res: list[bytes] = []
