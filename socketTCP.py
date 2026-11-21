@@ -126,11 +126,17 @@ class SocketTCP:
                     message_length = int.from_bytes(parsed["data"])
                     self.v_recv = 1
                 elif self.v_recv == 2:
-                    self.seq += min((min(16, buff_size)-self.buff_rem), len(parsed["data"]))
-                    message_received += parsed["data"][self.buff_rem:]
-                    self.buff_rem = 0
-                    self.seq_aux = 0
-                    self.v_recv = 1
+                    un_read = len(parsed["data"]) - self.buff_rem
+                    max_lec = self.buff_rem + min(un_read, buff_size)
+                    self.seq += min(un_read, buff_size)
+                    message_received += parsed["data"][self.buff_rem:max_lec]
+                    if max_lec == len(parsed["data"]):
+                        self.buff_rem = 0
+                        self.seq_aux = 0
+                        self.v_recv = 1
+                    else:
+                        self.buff_rem = max_lec
+                        self.seq_aux = self.seq
                 elif buff_size-len(message_received) < 16 and message_length>buff_size:
                     max_lec = buff_size - len(message_received)
                     self.seq = parsed["seq"] + max_lec
